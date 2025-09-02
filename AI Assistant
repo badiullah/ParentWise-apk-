@@ -1,0 +1,267 @@
+import React, { useState, useEffect, useRef } from "react";
+import { InvokeLLM } from "@/integrations/Core";
+import { Child } from "@/entities/all";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { 
+  MessageCircle, 
+  Send, 
+  Bot, 
+  User, 
+  Sparkles, 
+  Heart,
+  Users,
+  Clock
+} from "lucide-react";
+
+import ChatMessage from "../components/ai/ChatMessage";
+import QuickPrompts from "../components/ai/QuickPrompts";
+
+export default function AIAssistant() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [children, setChildren] = useState([]);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    loadChildren();
+    initializeChat();
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const loadChildren = async () => {
+    try {
+      const childrenData = await Child.list();
+      setChildren(childrenData);
+    } catch (error) {
+      console.error('Error loading children:', error);
+    }
+  };
+
+  const initializeChat = () => {
+    setMessages([{
+      id: 1,
+      type: 'assistant',
+      content: `Hello! I'm your AI parenting assistant. I'm here to help you navigate the beautiful journey of raising confident, respectful children.\n\nI can help with:\n• Building your child's self-respect and confidence\n• Learning from mistakes in a positive way\n• Equal treatment strategies\n• Age-appropriate discipline\n• Communication techniques\n• Development milestones\n\nWhat parenting question can I help you with today?`,
+      timestamp: new Date()
+    }]);
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const buildContextPrompt = (userQuestion) => {
+    let context = `You are a compassionate, expert parenting advisor focused on positive parenting techniques. 
+
+Key principles to always promote:
+1. Building children's self-respect and confidence
+2. Learning from mistakes rather than punishment
+3. Equal treatment of all children
+4. Positive discipline approaches
+5. Active listening and communication
+6. Age-appropriate expectations
+
+`;
+
+    if (children.length > 0) {
+      context += `The parent has ${children.length} child(ren):\n`;
+      children.forEach(child => {
+        const age = Math.floor(child.age_months / 12);
+        context += `- ${child.name}: ${age} years old${child.personality_traits?.length ? `, traits: ${child.personality_traits.join(', ')}` : ''}\n`;
+      });
+      context += '\n';
+    }
+
+    context += `Parent's question: ${userQuestion}
+
+Please provide a thoughtful, practical response that promotes positive parenting while being specific to their situation. Keep responses warm, supportive, and actionable.`;
+
+    return context;
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = {
+      id: Date.now(),
+      type: 'user',
+      content: input,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+
+    try {
+      const prompt = buildContextPrompt(input);
+      const response = await InvokeLLM({ prompt });
+
+      const assistantMessage = {
+        id: Date.now() + 1,
+        type: 'assistant',
+        content: response,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage = {
+        id: Date.now() + 1,
+        type: 'assistant',
+        content: "I apologize, but I'm having trouble responding right now. Please try asking your question again in a moment.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleQuickPrompt = (prompt) => {
+    setInput(prompt);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+              <MessageCircle className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">AI Parenting Assistant</h1>
+              <p className="text-gray-600">Get personalized guidance for positive parenting</p>
+            </div>
+          </div>
+
+          {children.length > 0 && (
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="w-5 h-5 text-green-500" />
+                  Your Children
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {children.map(child => (
+                    <Badge key={child.id} variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      {child.name} ({Math.floor(child.age_months / 12)} years)
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
+            <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-xl h-[600px] flex flex-col">
+              <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-full shadow-sm">
+                    <Bot className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">ParentWise AI</CardTitle>
+                    <p className="text-sm text-gray-600">Your personal parenting guide</p>
+                  </div>
+                  <div className="ml-auto">
+                    <Badge className="bg-green-100 text-green-700 border-green-200">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Online
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.map((message) => (
+                  <ChatMessage key={message.id} message={message} />
+                ))}
+                
+                {isLoading && (
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <Bot className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </CardContent>
+
+              <div className="border-t border-gray-100 p-4 bg-white">
+                <div className="flex gap-3">
+                  <Textarea
+                    placeholder="Ask me anything about parenting..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="flex-1 min-h-[50px] max-h-[120px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-200"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    onClick={sendMessage}
+                    disabled={!input.trim() || isLoading}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Press Enter to send, Shift+Enter for new line
+                </p>
+              </div>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <QuickPrompts onPromptSelect={handleQuickPrompt} />
+
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Heart className="w-5 h-5 text-red-500" />
+                  Tips for Better Conversations
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm space-y-2">
+                  <p>• Be specific about your child's age and situation</p>
+                  <p>• Describe the behavior or challenge clearly</p>
+                  <p>• Ask about positive approaches rather than punishments</p>
+                  <p>• Feel free to ask follow-up questions</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

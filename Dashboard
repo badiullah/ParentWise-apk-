@@ -1,0 +1,142 @@
+import React, { useState, useEffect } from "react";
+import { Child, Reminder } from "@/entities/all";
+import { User } from "@/entities/User";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { 
+  Users, 
+  Calendar, 
+  MessageCircle, 
+  BookOpen, 
+  Plus, 
+  Heart,
+  Cake,
+  Baby,
+  Sparkles 
+} from "lucide-react";
+import { format, isToday, isTomorrow, addDays } from "date-fns";
+
+import WelcomeCard from "../components/dashboard/WelcomeCard";
+import QuickStats from "../components/dashboard/QuickStats";
+import UpcomingReminders from "../components/dashboard/UpcomingReminders";
+import RecentTips from "../components/dashboard/RecentTips";
+
+export default function Dashboard() {
+  const [children, setChildren] = useState([]);
+  const [reminders, setReminders] = useState([]);
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const [childrenData, remindersData, userData] = await Promise.all([
+        Child.list('-created_date'),
+        Reminder.filter({ is_completed: false }, '-date', 5),
+        User.me().catch(() => null)
+      ]);
+      
+      setChildren(childrenData);
+      setReminders(remindersData);
+      setUser(userData);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const upcomingBirthdays = children.filter(child => {
+    const birthday = new Date(child.birth_date);
+    const thisYear = new Date().getFullYear();
+    const nextBirthday = new Date(thisYear, birthday.getMonth(), birthday.getDate());
+    const daysDiff = Math.ceil((nextBirthday - new Date()) / (1000 * 60 * 60 * 24));
+    return daysDiff >= 0 && daysDiff <= 30;
+  });
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        <WelcomeCard user={user} childrenCount={children.length} />
+
+        <QuickStats 
+          childrenCount={children.length}
+          upcomingReminders={reminders.length}
+          upcomingBirthdays={upcomingBirthdays.length}
+        />
+
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <UpcomingReminders 
+              reminders={reminders} 
+              birthdays={upcomingBirthdays}
+              isLoading={isLoading}
+            />
+            
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <MessageCircle className="w-6 h-6 text-blue-500" />
+                  AI Parenting Assistant
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
+                  <p className="text-gray-700 mb-4 leading-relaxed">
+                    Get instant, personalized parenting guidance powered by AI. Ask questions about discipline, 
+                    development, or any parenting challenge you're facing.
+                  </p>
+                  <Link to={createPageUrl("AIAssistant")}>
+                    <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Ask the AI Assistant
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <RecentTips isLoading={isLoading} />
+            
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <Sparkles className="w-5 h-5 text-yellow-500" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link to={createPageUrl("Children")}>
+                  <Button variant="outline" className="w-full justify-start hover:bg-green-50 border-green-200">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New Child
+                  </Button>
+                </Link>
+                <Link to={createPageUrl("Reminders")}>
+                  <Button variant="outline" className="w-full justify-start hover:bg-blue-50 border-blue-200">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Set Reminder
+                  </Button>
+                </Link>
+                <Link to={createPageUrl("ParentingTips")}>
+                  <Button variant="outline" className="w-full justify-start hover:bg-purple-50 border-purple-200">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Browse Tips
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

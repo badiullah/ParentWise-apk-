@@ -1,0 +1,152 @@
+import React, { useState, useEffect } from "react";
+import { Child } from "@/entities/all";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Users, Plus, Baby, Calendar, Heart } from "lucide-react";
+import { format, differenceInMonths } from "date-fns";
+
+import ChildCard from "../components/children/ChildCard";
+import AddChildForm from "../components/children/AddChildForm";
+
+export default function Children() {
+  const [children, setChildren] = useState([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingChild, setEditingChild] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadChildren();
+  }, []);
+
+  const loadChildren = async () => {
+    try {
+      const childrenData = await Child.list('-birth_date');
+      // Update age in months for each child
+      const updatedChildren = childrenData.map(child => ({
+        ...child,
+        age_months: differenceInMonths(new Date(), new Date(child.birth_date))
+      }));
+      setChildren(updatedChildren);
+    } catch (error) {
+      console.error('Error loading children:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveChild = async (childData) => {
+    const age_months = differenceInMonths(new Date(), new Date(childData.birth_date));
+    const dataWithAge = { ...childData, age_months };
+
+    try {
+      if (editingChild) {
+        await Child.update(editingChild.id, dataWithAge);
+      } else {
+        await Child.create(dataWithAge);
+      }
+      setShowAddForm(false);
+      setEditingChild(null);
+      loadChildren();
+    } catch (error) {
+      console.error('Error saving child:', error);
+    }
+  };
+
+  const handleEditChild = (child) => {
+    setEditingChild(child);
+    setShowAddForm(true);
+  };
+
+  const handleCancelForm = () => {
+    setShowAddForm(false);
+    setEditingChild(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl shadow-lg">
+              <Users className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">My Children</h1>
+              <p className="text-gray-600">Manage your children's profiles and track their growth</p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => setShowAddForm(true)}
+            className="bg-gradient-to-r from-blue-500 to-green-600 hover:from-blue-600 hover:to-green-700 shadow-lg"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add Child
+          </Button>
+        </div>
+
+        {showAddForm && (
+          <div className="mb-8">
+            <AddChildForm
+              child={editingChild}
+              onSave={handleSaveChild}
+              onCancel={handleCancelForm}
+            />
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array(3).fill(0).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : children.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {children.map((child) => (
+              <ChildCard
+                key={child.id}
+                child={child}
+                onEdit={handleEditChild}
+              />
+            ))}
+          </div>
+        ) : (
+          <Card className="text-center py-16 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardContent>
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-6 bg-gradient-to-br from-blue-100 to-green-100 rounded-full">
+                  <Baby className="w-16 h-16 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">No Children Added Yet</h2>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Start your parenting journey by adding your children's profiles. 
+                    This helps us provide personalized guidance and track important milestones.
+                  </p>
+                  <Button 
+                    onClick={() => setShowAddForm(true)}
+                    className="bg-gradient-to-r from-blue-500 to-green-600 hover:from-blue-600 hover:to-green-700 shadow-lg"
+                  >
+                    <Heart className="w-5 h-5 mr-2" />
+                    Add Your First Child
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,252 @@
+import React, { useState, useEffect } from "react";
+import { ParentingTip } from "@/entities/all";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { BookOpen, Search, Filter, Heart, Lightbulb, Users } from "lucide-react";
+
+import TipCard from "../components/tips/TipCard";
+import TipFilters from "../components/tips/TipFilters";
+
+const sampleTips = [
+  {
+    id: "sample-1",
+    title: "Building Your Child's Self-Respect",
+    content: "Self-respect grows when children feel valued for who they are, not just what they do. Acknowledge their efforts, listen to their thoughts, and show genuine interest in their perspective. When children feel heard and valued, they develop a strong sense of self-worth that stays with them throughout life.",
+    category: "self_respect",
+    age_group: "all",
+    tags: ["confidence", "validation", "listening"]
+  },
+  {
+    id: "sample-2", 
+    title: "Learning from Mistakes Together",
+    content: "When your child makes a mistake, resist the urge to lecture or punish immediately. Instead, sit with them and ask: 'What do you think happened here?' and 'What can we learn from this?' This approach teaches problem-solving skills and shows that mistakes are opportunities for growth, not reasons for shame.",
+    category: "mistakes",
+    age_group: "all",
+    tags: ["problem-solving", "growth mindset", "learning"]
+  },
+  {
+    id: "sample-3",
+    title: "Equal Treatment, Individual Needs",
+    content: "Treating children equally doesn't mean treating them identically. Each child has unique needs, strengths, and challenges. Equal treatment means giving each child what they need to thrive while maintaining consistent rules and expectations. Explain to your children why different approaches might be needed for different situations.",
+    category: "equality",
+    age_group: "all",
+    tags: ["fairness", "individual needs", "consistency"]
+  },
+  {
+    id: "sample-4",
+    title: "Active Listening with Young Children (Ages 3-5)",
+    content: "Get down to your child's eye level when they're speaking to you. Put away distractions and give them your full attention. Repeat back what you hear: 'You're telling me you're upset because...'. This validates their feelings and teaches them that their words matter.",
+    category: "communication",
+    age_group: "3-5",
+    tags: ["active listening", "validation", "emotional support"]
+  },
+  {
+    id: "sample-5",
+    title: "Positive Discipline for School Age (Ages 6-8)",
+    content: "Instead of punishment, focus on natural consequences and problem-solving. If they forget homework, help them develop a system to remember. If they hurt someone's feelings, guide them to make amends. This teaches responsibility and empathy rather than fear.",
+    category: "discipline",
+    age_group: "6-8",
+    tags: ["natural consequences", "responsibility", "empathy"]
+  },
+  {
+    id: "sample-6",
+    title: "Supporting Teenage Independence (Ages 13-15)",
+    content: "Teens need to practice independence while still having your support. Give them choices within boundaries: 'Would you like to do homework before or after dinner?' This respects their growing autonomy while maintaining necessary structure.",
+    category: "development",
+    age_group: "13-15",
+    tags: ["independence", "choices", "boundaries"]
+  }
+];
+
+export default function ParentingTips() {
+  const [tips, setTips] = useState([]);
+  const [filteredTips, setFilteredTips] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadTips();
+  }, []);
+
+  useEffect(() => {
+    filterTips();
+  }, [tips, searchTerm, selectedCategory, selectedAgeGroup]);
+
+  const loadTips = async () => {
+    try {
+      const tipsData = await ParentingTip.list('-created_date');
+      const allTips = tipsData.length > 0 ? tipsData : sampleTips;
+      setTips(allTips);
+    } catch (error) {
+      console.error('Error loading tips:', error);
+      setTips(sampleTips);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filterTips = () => {
+    let filtered = tips;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(tip => 
+        tip.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tip.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tip.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(tip => tip.category === selectedCategory);
+    }
+
+    // Filter by age group
+    if (selectedAgeGroup !== "all") {
+      filtered = filtered.filter(tip => 
+        tip.age_group === selectedAgeGroup || tip.age_group === "all"
+      );
+    }
+
+    setFilteredTips(filtered);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-purple-50 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-green-500 to-purple-600 rounded-2xl shadow-lg">
+              <BookOpen className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Parenting Tips</h1>
+              <p className="text-gray-600">Evidence-based guidance for positive parenting</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Search and Filter Section */}
+        <div className="grid lg:grid-cols-4 gap-6 mb-8">
+          <div className="lg:col-span-3">
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      placeholder="Search tips, topics, or keywords..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 border-gray-200 focus:border-green-300 focus:ring-green-200"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
+            <TipFilters
+              selectedCategory={selectedCategory}
+              selectedAgeGroup={selectedAgeGroup}
+              onCategoryChange={setSelectedCategory}
+              onAgeGroupChange={setSelectedAgeGroup}
+            />
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg text-center">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-green-600">{tips.length}</div>
+              <div className="text-sm text-gray-600">Total Tips</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg text-center">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-purple-600">{filteredTips.length}</div>
+              <div className="text-sm text-gray-600">Filtered</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg text-center">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-blue-600">
+                {[...new Set(tips.map(tip => tip.category))].length}
+              </div>
+              <div className="text-sm text-gray-600">Categories</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg text-center">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-orange-600">
+                {tips.filter(tip => tip.age_group !== "all").length}
+              </div>
+              <div className="text-sm text-gray-600">Age-Specific</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tips Grid */}
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array(6).fill(0).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredTips.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTips.map((tip) => (
+              <TipCard key={tip.id} tip={tip} />
+            ))}
+          </div>
+        ) : (
+          <Card className="text-center py-16 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardContent>
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-6 bg-gradient-to-br from-green-100 to-purple-100 rounded-full">
+                  <Lightbulb className="w-16 h-16 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">No Tips Found</h2>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Try adjusting your search terms or filters to find relevant parenting tips.
+                  </p>
+                  <Button 
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedCategory("all");
+                      setSelectedAgeGroup("all");
+                    }}
+                    variant="outline"
+                    className="hover:bg-green-50"
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

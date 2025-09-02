@@ -1,0 +1,243 @@
+import React, { useState, useEffect } from "react";
+import { Reminder, Child } from "@/entities/all";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar, Plus, Bell } from "lucide-react";
+import { format, isToday, isTomorrow, isPast } from "date-fns";
+
+import ReminderCard from "../components/reminders/ReminderCard";
+import AddReminderForm from "../components/reminders/AddReminderForm";
+
+export default function Reminders() {
+  const [reminders, setReminders] = useState([]);
+  const [children, setChildren] = useState([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingReminder, setEditingReminder] = useState(null);
+  const [filter, setFilter] = useState('all'); // all, today, upcoming, overdue
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [remindersData, childrenData] = await Promise.all([
+        Reminder.list('-date'),
+        Child.list()
+      ]);
+      setReminders(remindersData);
+      setChildren(childrenData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveReminder = async (reminderData) => {
+    try {
+      if (editingReminder) {
+        await Reminder.update(editingReminder.id, reminderData);
+      } else {
+        await Reminder.create(reminderData);
+      }
+      setShowAddForm(false);
+      setEditingReminder(null);
+      loadData();
+    } catch (error) {
+      console.error('Error saving reminder:', error);
+    }
+  };
+
+  const handleEditReminder = (reminder) => {
+    setEditingReminder(reminder);
+    setShowAddForm(true);
+  };
+
+  const handleToggleComplete = async (reminder) => {
+    try {
+      await Reminder.update(reminder.id, { 
+        ...reminder, 
+        is_completed: !reminder.is_completed 
+      });
+      loadData();
+    } catch (error) {
+      console.error('Error updating reminder:', error);
+    }
+  };
+
+  const handleCancelForm = () => {
+    setShowAddForm(false);
+    setEditingReminder(null);
+  };
+
+  const getFilteredReminders = () => {
+    return reminders.filter(reminder => {
+      const reminderDate = new Date(reminder.date);
+      
+      switch (filter) {
+        case 'today':
+          return isToday(reminderDate) && !reminder.is_completed;
+        case 'upcoming':
+          return !isPast(reminderDate) && !reminder.is_completed;
+        case 'overdue':
+          return isPast(reminderDate) && !reminder.is_completed && !isToday(reminderDate);
+        case 'completed':
+          return reminder.is_completed;
+        default:
+          return true;
+      }
+    });
+  };
+
+  const filteredReminders = getFilteredReminders();
+  const todayCount = reminders.filter(r => isToday(new Date(r.date)) && !r.is_completed).length;
+  const overdueCount = reminders.filter(r => isPast(new Date(r.date)) && !r.is_completed && !isToday(new Date(r.date))).length;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl shadow-lg">
+              <Calendar className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Reminders</h1>
+              <p className="text-gray-600">Stay on top of important dates and milestones</p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => setShowAddForm(true)}
+            className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 shadow-lg"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add Reminder
+          </Button>
+        </div>
+
+        {showAddForm && (
+          <div className="mb-8">
+            <AddReminderForm
+              reminder={editingReminder}
+              children={children}
+              onSave={handleSaveReminder}
+              onCancel={handleCancelForm}
+            />
+          </div>
+        )}
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">{reminders.length}</div>
+              <div className="text-sm text-gray-600">Total</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">{todayCount}</div>
+              <div className="text-sm text-gray-600">Today</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-red-600">{overdueCount}</div>
+              <div className="text-sm text-gray-600">Overdue</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-gray-600">{reminders.filter(r => r.is_completed).length}</div>
+              <div className="text-sm text-gray-600">Completed</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {[
+            { key: 'all', label: 'All', count: reminders.length },
+            { key: 'today', label: 'Today', count: todayCount },
+            { key: 'upcoming', label: 'Upcoming', count: reminders.filter(r => !isPast(new Date(r.date)) && !r.is_completed).length },
+            { key: 'overdue', label: 'Overdue', count: overdueCount },
+            { key: 'completed', label: 'Completed', count: reminders.filter(r => r.is_completed).length }
+          ].map(filterOption => (
+            <Button
+              key={filterOption.key}
+              variant={filter === filterOption.key ? "default" : "outline"}
+              onClick={() => setFilter(filterOption.key)}
+              className={filter === filterOption.key 
+                ? "bg-gradient-to-r from-purple-500 to-blue-600" 
+                : "hover:bg-purple-50"
+              }
+            >
+              {filterOption.label} ({filterOption.count})
+            </Button>
+          ))}
+        </div>
+
+        {/* Reminders List */}
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array(6).fill(0).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredReminders.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredReminders.map((reminder) => (
+              <ReminderCard
+                key={reminder.id}
+                reminder={reminder}
+                children={children}
+                onEdit={handleEditReminder}
+                onToggleComplete={handleToggleComplete}
+              />
+            ))}
+          </div>
+        ) : (
+          <Card className="text-center py-16 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardContent>
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-6 bg-gradient-to-br from-purple-100 to-blue-100 rounded-full">
+                  <Bell className="w-16 h-16 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {filter === 'all' ? 'No Reminders Yet' : `No ${filter} reminders`}
+                  </h2>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    {filter === 'all' 
+                      ? 'Stay organized by setting reminders for birthdays, appointments, and important milestones.'
+                      : `There are no ${filter} reminders to show.`
+                    }
+                  </p>
+                  {filter === 'all' && (
+                    <Button 
+                      onClick={() => setShowAddForm(true)}
+                      className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 shadow-lg"
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      Create Your First Reminder
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
