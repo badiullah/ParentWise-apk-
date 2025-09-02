@@ -1,0 +1,74 @@
+import React from "react";
+import { Bot, User } from "lucide-react";
+import { format } from "date-fns";
+
+export default function ChatMessage({ message }) {
+  const isAssistant = message.type === 'assistant';
+
+  return (
+    <div className={`flex gap-3 ${isAssistant ? '' : 'flex-row-reverse'}`}>
+      <div className={`p-2 rounded-full ${
+        isAssistant 
+          ? 'bg-blue-100' 
+          : 'bg-green-100'
+      }`}>
+        {isAssistant ? (
+          <Bot className="w-5 h-5 text-blue-600" />
+        ) : (
+          <User className="w-5 h-5 text-green-600" />
+        )}
+      </div>
+      <div className={`max-w-[80%] ${isAssistant ? '' : 'text-right'}`}>
+        <div className={`inline-block p-4 rounded-2xl ${
+          isAssistant
+            ? 'bg-gray-100 text-gray-900'
+            : 'bg-gradient-to-r from-green-500 to-blue-600 text-white'
+        }`}>
+          <div className="whitespace-pre-wrap leading-relaxed">
+            {message.content}
+          </div>
+        </div>
+        <div className={`text-xs text-gray-500 mt-1 ${isAssistant ? 'text-left' : 'text-right'}`}>
+          {format(message.timestamp, 'h:mm a')}
+        </div>
+      </div>
+    </div>
+  );
+}import React from "react";
+import { Bot, User } from "lucide-react";
+import { format } from "date-fns";
+
+export default function ChatMessage({ message }) {
+  const isAssistant = message.type === 'assistant';
+
+  return (
+    <div className={`flex gap-3 ${isAssistant ? '' : 'flex-row-reverse'}`}>
+      <div className={`p-2 rounded-full ${
+        isAssistant 
+          ? 'bg-blue-100' 
+          : 'bg-green-100'
+      }`}>
+        {isAssistant ? (
+          <Bot className="w-5 h-5 text-blue-600" />
+        ) : (
+          <User className="w-5 h-5 text-green-600" />
+        )}
+      </div>
+      <div className={`max-w-[80%] ${isAssistant ? '' : 'text-right'}`}>
+        <div className={`inline-block p-4 rounded-2xl ${
+          isAssistant
+            ? 'bg-gray-100 text-gray-900'
+            : 'bg-gradient-to-r from-green-500 to-blue-600 text-white'
+        }`}>
+          <div className="whitespace-pre-wrap leading-relaxed">
+            {message.content}
+          </div>
+        </div>
+        <div className={`text-xs text-gray-500 mt-1 ${isAssistant ? 'text-left' : 'text-right'}`}>
+          {format(message.timestamp, 'h:mm a')}
+        </div>
+      </div>
+    </div>
+  );
+}
+}

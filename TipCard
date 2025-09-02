@@ -1,0 +1,108 @@
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Heart, Users, ChevronDown, ChevronUp, Lightbulb } from "lucide-react";
+
+const categoryColors = {
+  self_respect: "bg-green-100 text-green-700 border-green-200",
+  mistakes: "bg-blue-100 text-blue-700 border-blue-200",
+  equality: "bg-purple-100 text-purple-700 border-purple-200",
+  communication: "bg-orange-100 text-orange-700 border-orange-200",
+  discipline: "bg-red-100 text-red-700 border-red-200",
+  learning: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  emotional_support: "bg-pink-100 text-pink-700 border-pink-200",
+  development: "bg-indigo-100 text-indigo-700 border-indigo-200"
+};
+
+const ageGroupColors = {
+  "0-2": "bg-cyan-100 text-cyan-700 border-cyan-200",
+  "3-5": "bg-emerald-100 text-emerald-700 border-emerald-200",
+  "6-8": "bg-blue-100 text-blue-700 border-blue-200",
+  "9-12": "bg-violet-100 text-violet-700 border-violet-200",
+  "13-15": "bg-rose-100 text-rose-700 border-rose-200",
+  "16-18": "bg-amber-100 text-amber-700 border-amber-200",
+  "all": "bg-gray-100 text-gray-700 border-gray-200"
+};
+
+export default function TipCard({ tip }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+
+  const contentPreview = tip.content.slice(0, 150);
+  const shouldShowReadMore = tip.content.length > 150;
+
+  return (
+    <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-gradient-to-br from-green-100 to-purple-100 rounded-full">
+              <Lightbulb className="w-4 h-4 text-green-600" />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsLiked(!isLiked)}
+              className={`ml-auto ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+            >
+              <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+            </Button>
+          </div>
+        </div>
+        
+        <CardTitle className="text-xl leading-tight text-gray-900 group-hover:text-green-700 transition-colors">
+          {tip.title}
+        </CardTitle>
+
+        <div className="flex flex-wrap gap-2 mt-3">
+          <Badge className={categoryColors[tip.category]}>
+            {tip.category.replace('_', ' ')}
+          </Badge>
+          <Badge className={ageGroupColors[tip.age_group]}>
+            <Users className="w-3 h-3 mr-1" />
+            {tip.age_group === "all" ? "All Ages" : `Ages ${tip.age_group}`}
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        <div className="space-y-4">
+          <p className="text-gray-700 leading-relaxed">
+            {isExpanded ? tip.content : contentPreview}
+            {!isExpanded && shouldShowReadMore && "..."}
+          </p>
+
+          {shouldShowReadMore && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-0 h-auto font-medium text-green-600 hover:text-green-700 hover:bg-transparent"
+            >
+              {isExpanded ? (
+                <>
+                  Show Less <ChevronUp className="w-4 h-4 ml-1" />
+                </>
+              ) : (
+                <>
+                  Read More <ChevronDown className="w-4 h-4 ml-1" />
+                </>
+              )}
+            </Button>
+          )}
+
+          {tip.tags && tip.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-2 border-t border-gray-100">
+              {tip.tags.map((tag, index) => (
+                <Badge key={index} variant="outline" className="text-xs bg-gray-50">
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

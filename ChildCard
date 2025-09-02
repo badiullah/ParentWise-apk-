@@ -1,0 +1,106 @@
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Cake, Palette, Heart, Edit, Calendar } from "lucide-react";
+import { format, differenceInYears } from "date-fns";
+
+export default function ChildCard({ child, onEdit }) {
+  const age = differenceInYears(new Date(), new Date(child.birth_date));
+  const nextBirthday = new Date(new Date().getFullYear(), new Date(child.birth_date).getMonth(), new Date(child.birth_date).getDate());
+  if (nextBirthday < new Date()) {
+    nextBirthday.setFullYear(nextBirthday.getFullYear() + 1);
+  }
+  const daysUntilBirthday = Math.ceil((nextBirthday - new Date()) / (1000 * 60 * 60 * 24));
+
+  return (
+    <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 via-transparent to-green-400/5"></div>
+      
+      <CardHeader className="relative">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              {child.name[0].toUpperCase()}
+            </div>
+            <div>
+              <CardTitle className="text-xl text-gray-900">{child.name}</CardTitle>
+              <p className="text-green-600 font-medium">
+                {age} year{age !== 1 ? 's' : ''} old
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onEdit(child)}
+            className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-50"
+          >
+            <Edit className="w-4 h-4 text-blue-600" />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent className="relative space-y-4">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Calendar className="w-4 h-4" />
+          <span>Born {format(new Date(child.birth_date), 'MMMM d, yyyy')}</span>
+        </div>
+
+        {daysUntilBirthday <= 30 && (
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-xl border border-purple-200">
+            <div className="flex items-center gap-2">
+              <Cake className="w-4 h-4 text-purple-600" />
+              <span className="text-sm text-purple-800 font-medium">
+                {daysUntilBirthday === 0 ? "Birthday today!" : 
+                 daysUntilBirthday === 1 ? "Birthday tomorrow!" :
+                 `Birthday in ${daysUntilBirthday} days`}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {child.personality_traits?.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Heart className="w-4 h-4 text-red-500" />
+              Personality
+            </h4>
+            <div className="flex flex-wrap gap-1">
+              {child.personality_traits.map((trait, index) => (
+                <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                  {trait}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {child.interests?.length > 0 && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Palette className="w-4 h-4 text-orange-500" />
+              Interests
+            </h4>
+            <div className="flex flex-wrap gap-1">
+              {child.interests.map((interest, index) => (
+                <Badge key={index} variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                  {interest}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {child.development_notes && (
+          <div>
+            <h4 className="font-medium text-gray-700 mb-2">Development Notes</h4>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              {child.development_notes}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

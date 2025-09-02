@@ -1,0 +1,52 @@
+{
+  "name": "Reminder",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Reminder title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Reminder details"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Reminder date"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "birthday",
+        "milestone",
+        "checkup",
+        "activity",
+        "other"
+      ],
+      "description": "Type of reminder"
+    },
+    "child_id": {
+      "type": "string",
+      "description": "Associated child ID"
+    },
+    "is_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether reminder is completed"
+    }
+  },
+  "required": [
+    "title",
+    "date",
+    "type"
+  ],
+  "rls": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

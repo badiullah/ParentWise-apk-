@@ -1,0 +1,56 @@
+{
+  "name": "Child",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Child's name"
+    },
+    "birth_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Child's birth date"
+    },
+    "age_months": {
+      "type": "number",
+      "description": "Current age in months"
+    },
+    "personality_traits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Notable personality traits"
+    },
+    "interests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Child's current interests and hobbies"
+    },
+    "development_notes": {
+      "type": "string",
+      "description": "Parent's notes about child's development"
+    },
+    "favorite_activities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Activities the child enjoys"
+    }
+  },
+  "required": [
+    "name",
+    "birth_date"
+  ],
+  "rls": {
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

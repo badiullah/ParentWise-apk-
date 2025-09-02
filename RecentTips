@@ -1,0 +1,99 @@
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { BookOpen, ChevronRight, Lightbulb } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { ParentingTip } from "@/entities/all";
+
+const sampleTips = [
+  {
+    title: "Building Self-Respect",
+    content: "Acknowledge your child's efforts, not just achievements. This builds intrinsic motivation and self-worth.",
+    category: "self_respect",
+    age_group: "all"
+  },
+  {
+    title: "Learning from Mistakes",
+    content: "When your child makes a mistake, ask 'What can we learn from this?' instead of focusing on punishment.",
+    category: "mistakes",
+    age_group: "all"
+  },
+  {
+    title: "Equal Treatment",
+    content: "Treat each child as an individual while maintaining consistent rules and expectations for all.",
+    category: "equality",
+    age_group: "all"
+  }
+];
+
+export default function RecentTips({ isLoading }) {
+  const [tips, setTips] = useState([]);
+
+  useEffect(() => {
+    loadTips();
+  }, []);
+
+  const loadTips = async () => {
+    try {
+      const tipsData = await ParentingTip.list('-created_date', 3);
+      setTips(tipsData.length > 0 ? tipsData : sampleTips);
+    } catch (error) {
+      setTips(sampleTips);
+    }
+  };
+
+  const getCategoryColor = (category) => {
+    const colors = {
+      self_respect: "bg-green-100 text-green-700",
+      mistakes: "bg-blue-100 text-blue-700",
+      equality: "bg-purple-100 text-purple-700",
+      communication: "bg-orange-100 text-orange-700",
+      discipline: "bg-red-100 text-red-700",
+      learning: "bg-yellow-100 text-yellow-700"
+    };
+    return colors[category] || "bg-gray-100 text-gray-700";
+  };
+
+  return (
+    <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-3 text-lg">
+          <BookOpen className="w-5 h-5 text-purple-500" />
+          Parenting Insights
+        </CardTitle>
+        <Link to={createPageUrl("ParentingTips")}>
+          <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700">
+            More Tips
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </Link>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {tips.map((tip, index) => (
+            <div key={index} className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100">
+              <div className="flex items-start gap-3">
+                <div className="p-1 rounded-full bg-purple-100 mt-1">
+                  <Lightbulb className="w-4 h-4 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold text-gray-900">{tip.title}</h3>
+                    <Badge className={getCategoryColor(tip.category)}>
+                      {tip.category.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {tip.content}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

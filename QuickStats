@@ -1,0 +1,65 @@
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, Calendar, Cake, TrendingUp } from "lucide-react";
+
+export default function QuickStats({ childrenCount, upcomingReminders, upcomingBirthdays }) {
+  const stats = [
+    {
+      title: "My Children",
+      value: childrenCount,
+      icon: Users,
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-blue-50",
+      textColor: "text-blue-700"
+    },
+    {
+      title: "Upcoming Reminders",
+      value: upcomingReminders,
+      icon: Calendar,
+      color: "from-green-500 to-green-600",
+      bgColor: "bg-green-50",
+      textColor: "text-green-700"
+    },
+    {
+      title: "Birthdays This Month",
+      value: upcomingBirthdays,
+      icon: Cake,
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-purple-50",
+      textColor: "text-purple-700"
+    },
+    {
+      title: "Parenting Journey",
+      value: "Growing",
+      icon: TrendingUp,
+      color: "from-orange-500 to-orange-600",
+      bgColor: "bg-orange-50",
+      textColor: "text-orange-700"
+    }
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {stats.map((stat) => (
+        <Card key={stat.title} className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              {stat.title}
+            </CardTitle>
+            <div className={`p-2 rounded-xl ${stat.bgColor} group-hover:scale-110 transition-transform duration-200`}>
+              <stat.icon className={`w-4 h-4 ${stat.textColor}`} />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-gray-900 mb-1">
+              {stat.value}
+            </div>
+            {stat.title === "Parenting Journey" && (
+              <p className="text-xs text-gray-500">Every day is progress</p>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}

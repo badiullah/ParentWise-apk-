@@ -1,0 +1,95 @@
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, Cake, Bell, ChevronRight } from "lucide-react";
+import { format, isToday, isTomorrow } from "date-fns";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export default function UpcomingReminders({ reminders, birthdays, isLoading }) {
+  const getDateBadge = (date) => {
+    if (isToday(new Date(date))) {
+      return <Badge className="bg-red-100 text-red-700 border-red-200">Today</Badge>;
+    }
+    if (isTomorrow(new Date(date))) {
+      return <Badge className="bg-orange-100 text-orange-700 border-orange-200">Tomorrow</Badge>;
+    }
+    return <Badge variant="outline">{format(new Date(date), 'MMM d')}</Badge>;
+  };
+
+  const combinedItems = [
+    ...birthdays.map(child => ({
+      id: child.id,
+      title: `${child.name}'s Birthday`,
+      type: 'birthday',
+      date: child.birth_date,
+      icon: Cake
+    })),
+    ...reminders.map(reminder => ({
+      ...reminder,
+      icon: Bell
+    }))
+  ].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  return (
+    <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-3 text-xl">
+          <Calendar className="w-6 h-6 text-green-500" />
+          Upcoming Events
+        </CardTitle>
+        <Link to={createPageUrl("Reminders")}>
+          <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
+            View All
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-4">
+            {Array(3).fill(0).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-4 rounded-xl border">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-32 mb-2" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : combinedItems.length > 0 ? (
+          <div className="space-y-3">
+            {combinedItems.slice(0, 4).map((item) => (
+              <div key={`${item.type}-${item.id}`} className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-green-200 hover:bg-green-50/50 transition-all duration-200">
+                <div className={`p-2 rounded-full ${
+                  item.type === 'birthday' ? 'bg-purple-100' : 'bg-blue-100'
+                }`}>
+                  <item.icon className={`w-5 h-5 ${
+                    item.type === 'birthday' ? 'text-purple-600' : 'text-blue-600'
+                  }`} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">{item.title}</h3>
+                  {item.description && (
+                    <p className="text-sm text-gray-600">{item.description}</p>
+                  )}
+                </div>
+                {getDateBadge(item.date)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p>No upcoming events</p>
+            <p className="text-sm">Add reminders to stay organized</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
